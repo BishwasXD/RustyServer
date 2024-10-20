@@ -6,7 +6,14 @@
     <title>Document</title>
 </head>
 <body>
-    <p>HELLO RUSTY SERVER!</p>
+    <p style="color: aqua; cursor: pointer;" id="text">HELLO RUSTY SERVER!</p>
     
 </body>
+<script>
+    let textContent = document.getElementById('text')
+    textContent.onclick = function(){
+        textContent.style.color = "yellow"
+    }
+
+</script>
 </html>

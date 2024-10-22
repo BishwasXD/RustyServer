@@ -13,7 +13,7 @@ fetch('http://127.0.0.1:8477/')
   .catch((error) => {
     console.error('Fetch Error:', error);
   });
-  
+
 function mapData(data){
 data.map((d)=>console.log(d.description))
 

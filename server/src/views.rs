@@ -1,4 +1,4 @@
-use std::{ fs::{ File, OpenOptions }, io::{ Read, Write } };
+use std::{ fs::OpenOptions , io::{ Read, Write } };
 
 use crate::{ utils::send_response, HttpRequest };
 use serde::Deserialize;
@@ -6,17 +6,18 @@ use serde::Deserialize;
 //for handling logic
 #[derive(Deserialize, Debug)]
 #[derive(serde::Serialize)]
-struct Task {
+pub struct Task {
     title: String,
     description: String,
     completed: bool,
     created_at: String,
 }
 
-pub fn views(http_request: HttpRequest) -> String {
+pub fn views(http_request: HttpRequest) -> String{
     //here will have the post and get logic for our todo app
     //views will always returns a response, the response type shall be enums.
     if http_request.method == "POST" {
+
         let body: String = http_request.body;
         let new_task: Task = serde_json::from_str(&body).unwrap();
 
@@ -36,12 +37,11 @@ pub fn views(http_request: HttpRequest) -> String {
         let response: String = String::from("Data saved successfully");
 
         return send_response(response, 201);
-    } else if http_request.method == "GET" {
-        let response: String = get_from_file();
-        return send_response(response, 200);
     } else {
-        return "Only post and get handled for now".to_owned();
-    }
+        let response: String = get_from_file();
+
+        return send_response(response, 200);
+    } 
 }
 fn save_to_file(data: &Vec<Task>) {
     //to append to a exisiting file, we will have to use OpenOption, this gives us the ability to configure how file is opened and what type of operations are allowed.

@@ -10,12 +10,12 @@ pub struct HttpRequest {
     pub content_type: String,
 }
 fn main() {
-    const HOST: &str = "127.0.0.0";
+    const HOST: &str = "127.0.0.1";
     const PORT: &str = "8477";
 
     let end_point: String = HOST.to_owned() + ":" + PORT ; //listening address
 
-    let listener: TcpListener = TcpListener::bind(end_point).unwrap();
+    let listener: TcpListener = TcpListener::bind(end_point).expect("Failed listening to the address");
     println!("Server runnning on port {PORT}");
     for stream in listener.incoming() {
         let stream: std::net::TcpStream = stream.unwrap();
@@ -47,6 +47,7 @@ fn handle_connection(mut stream: TcpStream) {
     }
 
     let mut content_length: usize = 0;
+    if type_of_request == "POST" {
     for line in buffer.by_ref().lines() {
         let line = line.expect("Failed to read a line");
         println!("{line}");
@@ -55,8 +56,8 @@ fn handle_connection(mut stream: TcpStream) {
             break;
         }
     }
+}
     let request_body = utils::get_req_body(&mut buffer, content_length);
-
     let http_request: HttpRequest = HttpRequest {
         method: type_of_request,
         body: request_body,
@@ -66,6 +67,7 @@ fn handle_connection(mut stream: TcpStream) {
     };
     let response = views::views(http_request);
     stream.write_all(response.as_bytes()).unwrap();
+
 }
 
 //TODO: TRY TO HANDLE AUTH TOKEN AS WELL.

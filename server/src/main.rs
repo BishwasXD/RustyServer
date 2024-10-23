@@ -1,21 +1,25 @@
-use std::{ io::{ prelude::*, BufReader }, net::{ TcpListener, TcpStream } };
+use std::{io::{ prelude::*, BufReader }, net::{ TcpListener, TcpStream }, vec };
 pub mod utils;
 pub mod views;
-
+mod dispatch;
+mod models;
 pub struct HttpRequest {
     pub method: String,
     pub body: String,
     pub content_length: usize,
     pub bearer_token: String,
     pub content_type: String,
+    pub url: String,
 }
 fn main() {
     const HOST: &str = "127.0.0.1";
     const PORT: &str = "8477";
 
-    let end_point: String = HOST.to_owned() + ":" + PORT ; //listening address
+    let end_point: String = HOST.to_owned() + ":" + PORT; //listening address
 
-    let listener: TcpListener = TcpListener::bind(end_point).expect("Failed listening to the address");
+    let listener: TcpListener = TcpListener::bind(end_point).expect(
+        "Failed listening to the address"
+    );
     println!("Server runnning on port {PORT}");
     for stream in listener.incoming() {
         let stream: std::net::TcpStream = stream.unwrap();
@@ -26,48 +30,42 @@ fn main() {
 fn handle_connection(mut stream: TcpStream) {
     println!("handling connection...");
 
-    // FOR READING DATA DIRECTLY FROM STREAM
-    /*
-    let mut buffer = [0; 1024];
-    stream.read(&mut buffer).unwrap();
-    use std::str;
-    println!("{:?}", buffer);
-    let x = str::from_utf8(&buffer).unwrap();
-    println!("{}", x);
- */
-    //READING DATA AFTER BUFFERING
     //tip: we can create a buffer with predefined capacity as well. with ::with_capacity(cap, f)
     let mut buffer: BufReader<&mut TcpStream> = BufReader::new(&mut stream);
-    let mut type_of_request: String = String::from("GET"); //default
-
+    let mut request_information: Vec<String> = vec!["GET".to_owned(), "HTTP".to_owned()]; //default
     if let Some(Ok(line)) = buffer.by_ref().lines().next() {
-        type_of_request = utils::request_type(line);
+        request_information = utils::parse_request(line);
     } else {
         println!("Error reading request method");
     }
+    let type_of_request: String = request_information.get(0).unwrap().to_owned();
+    let url: String = request_information.get(1).unwrap().to_owned();
+
 
     let mut content_length: usize = 0;
+    //if post type we extract data from a request body
     if type_of_request == "POST" {
-    for line in buffer.by_ref().lines() {
-        let line = line.expect("Failed to read a line");
-        println!("{line}");
-        if line.starts_with("Content-Length") {
-            content_length = utils::get_content_length(line);
-            break;
+        for line in buffer.by_ref().lines() {
+            let line = line.expect("Failed to read a line");
+            println!("{line}");
+            if line.starts_with("Content-Length") {
+                content_length = utils::get_content_length(line);
+                break;
+            }
         }
     }
-}
-    let request_body = utils::get_req_body(&mut buffer, content_length);
+
+    let request_body: String = utils::get_req_body(&mut buffer, content_length);
     let http_request: HttpRequest = HttpRequest {
         method: type_of_request,
         body: request_body,
         content_length: content_length,
         bearer_token: String::from(""),
         content_type: String::from(""),
+        url: url,
     };
-    let response = views::views(http_request);
+    let response = dispatch::dispatch_request(http_request);
     stream.write_all(response.as_bytes()).unwrap();
-
 }
 
 //TODO: TRY TO HANDLE AUTH TOKEN AS WELL.

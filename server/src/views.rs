@@ -1,24 +1,18 @@
-use std::{ fs::OpenOptions , io::{ Read, Write } };
+use std::fs;
 
-use crate::{ utils::send_response, HttpRequest };
-use serde::Deserialize;
+use crate::utils::{get_from_file,render_template, save_to_file, send_response};
+use crate::models::Task;
+use crate::HttpRequest;
 
-//for handling logic
-#[derive(Deserialize, Debug)]
-#[derive(serde::Serialize)]
-pub struct Task {
-    title: String,
-    description: String,
-    completed: bool,
-    created_at: String,
-}
+pub fn get_tasks_lists() -> String
+    {
+        let response: String = get_from_file();
+       
+       return  send_response(response, 200);
+    }
 
-pub fn views(http_request: HttpRequest) -> String{
-    //here will have the post and get logic for our todo app
-    //views will always returns a response, the response type shall be enums.
-    if http_request.method == "POST" {
-
-        let body: String = http_request.body;
+pub fn post_task(request:HttpRequest) -> String {
+        let body: String = request.body;
         let new_task: Task = serde_json::from_str(&body).unwrap();
 
         let saved_data: String = get_from_file();
@@ -37,31 +31,9 @@ pub fn views(http_request: HttpRequest) -> String{
         let response: String = String::from("Data saved successfully");
 
         return send_response(response, 201);
-    } else {
-        let response: String = get_from_file();
+    }
 
-        return send_response(response, 200);
-    } 
-}
-fn save_to_file(data: &Vec<Task>) {
-    //to append to a exisiting file, we will have to use OpenOption, this gives us the ability to configure how file is opened and what type of operations are allowed.
-    let json_data = serde_json::to_string_pretty(data).unwrap();
-    let mut file = OpenOptions::new()
-        .read(true)
-        .truncate(true)
-        .write(true)
-        .open("/home/bishwas/Desktop/RustyServer/server/todos.json")
-        .unwrap();
-    file.write_all(json_data.as_bytes()).unwrap();
-}
-
-fn get_from_file() -> String {
-    let mut file = OpenOptions::new()
-        .read(true)
-        .write(false)
-        .open("/home/bishwas/Desktop/RustyServer/server/todos.json")
-        .unwrap();
-    let mut file_contents = String::new();
-    file.read_to_string(&mut file_contents).unwrap();
-    return file_contents;
+pub fn render_homepage() -> String{
+    let html_content: String = fs::read_to_string("/home/bishwas/Desktop/RustyServer/server/static/template/todo.html").unwrap();
+    return render_template(html_content, 200)
 }

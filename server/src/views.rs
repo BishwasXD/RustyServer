@@ -13,8 +13,8 @@ pub fn get_tasks_lists() -> String
 
 pub fn post_task(request:HttpRequest) -> String {
         let body: String = request.body;
+        println!("body is {body}");
         let new_task: Task = serde_json::from_str(&body).unwrap();
-
         let saved_data: String = get_from_file();
         let mut tasks: Vec<Task> = if saved_data.is_empty() {
             vec![] 
@@ -25,7 +25,6 @@ pub fn post_task(request:HttpRequest) -> String {
 
 
         tasks.push(new_task);
-        println!("{tasks:?}");
         save_to_file(&tasks);
 
         let response: String = String::from("Data saved successfully");

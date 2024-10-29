@@ -1,14 +1,236 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToDo</title>
-    <link rel="stylesheet" href="../styles/todo.css" />
+  <meta charset="UTF-8">  <!-- Ensure the page is encoded in UTF-8 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple To-Do App</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            height: calc(100vh - 4rem);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .form-section {
+            flex: 0 0 auto; /* Auto height based on content */
+            padding: 2rem;
+            border-bottom: 2px solid #f0f0f0;
+            background-color: white;
+        }
+
+        .list-section {
+            flex: 1;
+            padding: 2rem;
+            background-color: #fafafa;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            overflow-y: auto;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        textarea {
+            resize: none;
+            height: 80px; 
+        }
+
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+
+        .tasks {
+            list-style: none;
+        }
+
+        .task-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .task-title {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .task-description {
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
-    <p id="hi">hi todo server</p>
-    
+    <div class="container">
+        <div class="form-section">
+            <h2>Add New Task</h2>
+            <form id="todo-form">
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" placeholder="Enter task title" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" placeholder="Enter task description"></textarea>
+                </div>
+                <button type="submit" id="submit">Add Task</button>
+            </form>
+        </div>
+        
+        <div class="list-section">
+         <h2>Tasks</h2>
+            <ul id="tasks">
+          
+            </ul> 
+        </div>
+    </div>
 </body>
-<script src="../script/todo.js"></script>
+<script>
+    let submitButton = document.getElementById('submit');
+    let taskForm = document.getElementById('todo-form');
+    let taskTitle = document.getElementById('title');
+    let description = document.getElementById("description");
+    let taskList = document.getElementById('task-list');
+    let unorderedList = document.getElementById("tasks")
+    taskForm.addEventListener('submit', handleFormSubmit);
+
+    function handleFormSubmit(event) {
+      event.preventDefault();
+
+      let title = taskTitle.value.trim();
+      let des = description.value.trim();
+
+      if (title === "") {
+        alert("Title cannot be empty");
+        return;
+      }
+
+      let data = {
+        title: title,
+        description: des,
+        created_at: new Date().toISOString(),
+        completed: false
+      };
+      data = JSON.stringify(data)
+
+      console.log("Submitted data is:", data);
+      postData(data)
+    }
+    function postData(data){
+        let postUrl = "http://127.0.0.1:8477/post-data";
+        fetch(postUrl, {
+  method: 'POST',
+  body:data
+})
+.then(response => response.json())
+.then(data => console.log(data))
+.catch(error => console.error('Error:', error));
+        
+    }
+    getData()
+
+    async function getData() {
+    try {
+        const data = await handleGetRequest();
+        console.log("Data received:", data);
+        constructHtml(data);
+    } catch (error) {
+        console.error("Error fetching data:", error);
+    }
+}
+
+async function handleGetRequest() {
+    try {
+        const response = await fetch('http://127.0.0.1:8477/get-data');
+        if (!response.ok) {
+            throw new Error('Network response was not OK');
+        }
+        const data = await response.json();
+        console.log('Response Data:', data);
+        return data; 
+    } catch (error) {
+        console.error('Fetch Error:', error);
+        throw error;
+    }
+}
+
+
+function constructHtml(data) {
+    console.log("here")
+    let htmlTemplate = "";
+    for (let i = 0; i < data.length; i++) {
+        htmlTemplate += `
+            <li class="task-item">
+                <div class="task-title">${data[i].title}</div>
+                <div class="task-description">${data[i].description}</div>
+            </li>
+        `;
+    }
+    console.log(htmlTemplate)
+    unorderedList.innerHTML = htmlTemplate; 
+}
+
+</script>
 </html>

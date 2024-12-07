@@ -67,8 +67,6 @@ fn handle_connection(mut stream: TcpStream) {
     }
 
     println!("Request Body: {body}");
-
-
     let http_request = HttpRequest {
         method,
         body,
@@ -80,4 +78,5 @@ fn handle_connection(mut stream: TcpStream) {
 
     let response = router::dispatch_request(http_request);
     stream.write_all(response.as_bytes()).expect("Failed to write response");
+    println!("Response send successfully!");
 }

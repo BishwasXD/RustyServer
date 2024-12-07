@@ -6,6 +6,7 @@ pub struct Task {
     pub title: String,
     pub description: String,
     pub completed: bool,
+ 
     pub created_at: String,
 }
 
